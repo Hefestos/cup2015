@@ -1,0 +1,7 @@
+http://8a52labs.wordpress.com/2011/05/24/detecting-blobs-using-cvblobs-library/
+
+http://docs.opencv.org/modules/features2d/doc/common_interfaces_of_feature_detectors.html?highlight=simpleblob#SimpleBlobDetector%20:%20public%20FeatureDetector
+
+http://stackoverflow.com/questions/8076889/tutorial-on-opencv-simpleblobdetector
+
+http://code.google.com/p/my-masters-thesis/source/browse/trunk/MastersThesis/Sample/SimpleBlobDetecter_demo.cpp?r=66

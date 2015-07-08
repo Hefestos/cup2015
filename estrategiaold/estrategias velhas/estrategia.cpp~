@@ -1,0 +1,192 @@
+#include "estrategia.h"
+
+
+estrategia::estrategia()
+{
+	field = cvCreateImage(cvSize(270,102),IPL_DEPTH_8U,1);
+	cvSet(field,cvScalar(0,0,0));
+	cvCircle(field, cvPoint(270/2, 102/2), 10, cvScalar(128), -1);
+	cvCircle(field, cvPoint(270/2 + 5, 102/2 + 5), 10, cvScalar(128), -1);
+}
+
+estrategia::~estrategia()
+{
+}
+
+robot estrategia::goleiro(robot ponto_bola, float x_goleiro)
+{
+
+	ponto_f.x = x_goleiro;
+
+    if (ponto_bola.y >= 148)
+    {
+         ponto_f.y = 148;
+    }
+    else if(ponto_bola.y <= 64)
+    {
+         ponto_f.y = 64;
+    }
+    else
+    {
+         ponto_f.y = ponto_bola.y;
+    }
+	return ponto_f;
+}
+
+robot estrategia::goleiro_gago(robot ponto_bola, float x_goleiro)
+{
+    float y_max = 148; // y maximo que o goleiro pode ir
+    float y_min = 64; // y minimo que o goleiro pode ir
+    float y_med  = (y_max + y_min)/2.0;
+
+    float coeficiente = ponto_bola.x*1.0/x_goleiro*1.0; // constante de proporcionalidade da distancia da bola ao goleiro
+
+	cout << "coeficiente = " << coeficiente << endl;
+
+	cout << "diferenca = " << y_med/(2*coeficiente) << endl;
+	ponto_f.x = x_goleiro;
+
+    if (ponto_bola.y > y_med){
+        ponto_f.y = y_med + (y_med/(2*coeficiente));
+    } else if (ponto_bola.y < y_med){
+        ponto_f.y = y_med - (y_med/(2*coeficiente));
+    } else {
+        ponto_f.y = y_med;
+    }
+	return ponto_f;
+}
+
+void estrategia::routing(robot init, robot goal)
+{
+	int cost = 1;
+	std::vector<robot> open;
+	init.theta = 0;
+	CvScalar step;
+	robot next;
+	int x, y, g;
+	int x2, y2, g2;
+
+	int delta[8][3] =	{{-1, 0 }, // go up
+						{ -1, -1}, // go northwest
+						{ 0, -1}, // go left
+						{ 1, -1}, // go southwest
+						{ 1, 0}, // go down
+						{ 1, 1}, // go southeast
+						{ 0, 1 }, // go right
+						{ -1, 1 }}; // go norheast
+
+	for(int k = 0; k < 8; k++)
+		cout << "(" << delta[k][0] << ", " << delta[k][1] << ")" << endl;
+
+	int height, width;
+	CvScalar pixel;
+
+	height = field ->height;
+	width = field -> width;
+
+	height = 5;
+	width = 5;
+
+
+	bool found = false;
+	bool resign = false;
+
+	CvMat* closed = cvCreateMat(height, width, CV_32SC1);
+	CvMat* expand = cvCreateMat(height, width, CV_32SC1);
+
+	pixel.val[0] = -1;
+	for(int i = 0; i < height; i++)
+	{
+		for(int j = 0; j < width; j++)
+		{
+			cvSet2D(expand, i, j, pixel);
+		}
+	}
+	pixel.val[0] = 0;
+	for(int i = 0; i < height; i++)
+	{
+		for(int j = 0; j < width; j++)
+		{
+			cvSet2D(closed, i, j, pixel);
+		}
+	}
+	cvSet2D(closed, init.x, init.y, cvRealScalar(1));
+	
+	step.val[0] = 0;
+	open.push_back(init);
+
+	while (!found && !resign)
+	{
+		if (open.size() == 0)
+		{
+			resign = true;
+			break;
+		}
+		else
+		{
+			open = sort(open);
+			reverse(open.begin(), open.end());
+			next = open.back();
+			open.pop_back();
+
+			x = next.x;
+			y = next.y;
+			g = next.theta;
+
+			cvSet2D(expand, x, y, step);
+			step.val[0] += 1;
+
+			if ((x == goal.x) && (y == goal.y))
+			{
+				found = true;
+			}
+			else
+			{
+				for (int i = 0; i < 8; i++)
+				{
+					x2 = x + delta[i][0];
+					y2 = y + delta[i][1];
+					if ((x2 >= 0) && (x2 < width) && (y2 >= 0) && (y2 < height))
+					{
+						if ((cvGet2D(closed, x2, y2).val[0] == 0) && (cvGet2D(field, x2, y2).val[0] == 0))
+						{
+							g2 = g + cost;
+							open.push_back(robot(x2, y2, g2));
+							cvSet2D(closed, x2, y2, cvRealScalar(1));
+						}
+					}
+				}
+			}
+		}
+	}
+	for(int i = 0; i < height; i++)
+	{
+		for(int j = 0; j < width; j++)
+		{
+			cout << cvGet2D(expand, i, j).val[0] << ", ";
+		}
+		cout << endl;
+	}
+}
+
+vector<robot> estrategia::sort(vector<robot> open)
+{
+	robot aux;
+	int k = open.size() - 1; 
+	for (int i = 0; i < open.size(); i++)
+	{
+		int j = 0;
+		while (j < k)
+		{
+			if (open[j].theta > open[j+1].theta)
+			{
+				aux = open[j];
+				open[j] = open[j+1];
+				open[j+1] = aux;
+			}
+			j += 1;
+		}
+		k -= 1;
+	}
+	return open;
+}

@@ -1,0 +1,3 @@
+http://www.aishack.in/2010/07/tracking-colored-objects-in-opencv/
+
+https://github.com/liquidmetal/AI-Shack--Tracking-with-OpenCV/blob/master/TrackColour.cpp
